@@ -39,6 +39,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install --pre .
         pip install -e ./rosemary
+    
+    - name: Install generator vendor package
+      run: |
+        pip install --no-cache-dir -e ./app/features/generator/vendor
 
     - name: Run tests with coverage
       run: |
