@@ -37,7 +37,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install --pre .
         pip install -e ./rosemary
 
     - name: Run tests with coverage
