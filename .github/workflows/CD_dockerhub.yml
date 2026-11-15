@@ -33,7 +33,7 @@ jobs:
           DOCKER_BUILDKIT: "1"
         run: |
           TAG=${{ github.event.release.tag_name }}
-          IMAGE=${{ secrets.DOCKER_USER }}/uvlhub
+          IMAGE=${{ secrets.DOCKER_USER }}/pokehub
 
           docker build --build-arg VERSION_TAG=$TAG -t $IMAGE:$TAG -f docker/images/Dockerfile.prod .
           docker push $IMAGE:$TAG
