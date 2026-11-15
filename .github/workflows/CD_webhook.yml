@@ -19,10 +19,6 @@ jobs:
         env:
           DEPLOY_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
-          if [ -z "$DEPLOY_URL" ]; then
-            echo "::error::Falta el secreto WEBHOOK_URL"
-            exit 1
-          fi
           curl -f -s -S "$DEPLOY_URL"
           echo "Despliegue disparado en Render."
 
