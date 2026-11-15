@@ -79,3 +79,8 @@ ARG VERSION_TAG
 RUN echo "$VERSION_TAG" > /workspace/.version
 
 EXPOSE 5000
+
+RUN chmod +x /workspace/docker/entrypoints/*.sh /workspace/scripts/*.sh
+
+CMD ["/bin/bash", "/workspace/docker/entrypoints/production_entrypoint.sh"]
+

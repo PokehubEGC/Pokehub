@@ -18,6 +18,7 @@ set -e
 # Apply migrations
 sh ./scripts/apply_migrations.sh
 
-# Start the application using Gunicorn, binding it to port 5000
+# Start the application using Gunicorn, binding it to port 5000 (or $PORT if defined by Render)
 # Set the logging level to info and the timeout to 3600 seconds
-exec gunicorn --workers 3 --bind 0.0.0.0:5000 app:app --log-level info --timeout 3600
+PORT="${PORT:-5000}"
+exec gunicorn --workers 3 --bind 0.0.0.0:$PORT app:app --log-level info --timeout 3600
