@@ -1,39 +1,60 @@
-# ----------------------------------------------------------------------------
-# Deploy on Webhook Workflow
-# This workflow triggers a deployment webhook only after the "Pytest"
-# workflow has successfully completed on the main branch.
-# ----------------------------------------------------------------------------
-
-name: Deploy on Webhook
+name: Deploy and Smoke Tests
 
 on:
   workflow_run:
-    # Trigger only after "Pytest" completes on the main branch. The
-    # branches: filter restricts the trigger itself — without it the
-    # workflow would fire on every branch's Pytest run and then be
-    # gated only by the job-level if, which is noisy in the Actions tab.
-    workflows:
-      - "Pytest"
-    types:
-      - completed
-    branches:
-      - main
+    workflows: ["Pytest"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
-    # Belt-and-suspenders: re-check that the upstream Pytest run both
-    # succeeded AND was on main. In a workflow_run context github.ref
-    # refers to the triggered workflow itself; the head_branch field
-    # holds the branch where the upstream Pytest actually ran.
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-24.04
 
     steps:
-      # Step: Trigger the external deployment webhook
-      - name: Deploy to Render
+      - name: Trigger Render Deploy
         env:
-          deploy_url: ${{ secrets.WEBHOOK_URL}}
+          DEPLOY_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
-          curl "$deploy_url"
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "::error::Falta el secreto WEBHOOK_URL"
+            exit 1
+          fi
+          curl -f -s -S "$DEPLOY_URL"
+          echo "Despliegue disparado en Render."
+
+      - name: Smoke Tests
+        env:
+          URL: 'https://pokehub-5qa5.onrender.com'
+        run: |
+          TARGET="${URL%/}"
+          echo "Esperando arranque en Render (45s)..."
+          sleep 45
+
+          # Esperar a que responda la web (hasta 2.5 min)
+          ONLINE=0
+          for i in {1..10}; do
+            if curl -s -f -L --max-time 10 "$TARGET/" > /dev/null; then
+              ONLINE=1
+              break
+            fi
+            echo "Reintento $i/10..."
+            sleep 15
+          done
+
+          if [ $ONLINE -ne 1 ]; then
+            echo "::error::El servicio no respondió a tiempo."
+            exit 1
+          fi
+
+          # Comprobar endpoints clave
+          echo "Verificando endpoints principales..."
+          for path in "/" "/login" "/apidocs/"; do
+            echo "Probando $TARGET$path..."
+            curl -s -f -L --max-time 10 "$TARGET$path" > /dev/null || { echo "::error::Fallo en $path"; exit 1; }
+          done
+
+          echo "✅ ¡Despliegue completado y verificado con éxito!"
