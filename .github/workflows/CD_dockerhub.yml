@@ -20,6 +20,18 @@ jobs:
       # Step 1: Check out the repository code
       - uses: actions/checkout@v5
 
+            # Step de diagnóstico: verifica presencia y longitud de los secretos
+      - name: Debug secrets presence
+        env:
+          D_USER: ${{ secrets.DOCKER_USER }}
+          D_PASS: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "Longitud DOCKER_USER: ${#D_USER}"
+          echo "Longitud DOCKER_PASSWORD: ${#D_PASS}"
+          if [ -z "$D_USER" ]; then echo "::error::DOCKER_USER está VACÍO en GitHub Actions"; fi
+          if [ -z "$D_PASS" ]; then echo "::error::DOCKER_PASSWORD está VACÍO en GitHub Actions"; fi
+          if [[ "$D_USER" == *"@"* ]]; then echo "::error::DOCKER_USER es un email, debe ser tu Docker ID (username)"; fi
+          
       # Step 2: Log in to Docker Hub using secrets
       - name: Log in to Docker Hub
         uses: docker/login-action@v3.6.0
