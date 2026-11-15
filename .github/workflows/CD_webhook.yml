@@ -32,11 +32,8 @@ jobs:
 
     steps:
       # Step: Trigger the external deployment webhook
-      - name: Trigger Deployment Webhook
+      - name: Deploy to Render
         env:
-          WEBHOOK_DOMAIN: ${{ secrets.WEBHOOK_DOMAIN }}
-          WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
+          deploy_url: ${{ secrets.WEBHOOK_URL}}
         run: |
-          curl -X POST \
-            https://${{ secrets.WEBHOOK_DOMAIN }}/webhook/deploy \
-            -H "Authorization: Bearer ${{ secrets.WEBHOOK_TOKEN }}"
+          curl "$deploy_url"
