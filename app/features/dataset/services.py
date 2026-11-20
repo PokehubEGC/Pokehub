@@ -94,6 +94,7 @@ class DataSetService(BaseService):
         self.hubfiledownloadrecord_repository = HubfileDownloadRecordRepository()
         self.hubfilerepository = HubfileRepository()
         self.dsviewrecord_repostory = DSViewRecordRepository()
+        self.dsviewrecord_repository = self.dsviewrecord_repostory
         self.hubfileviewrecord_repository = HubfileViewRecordRepository()
         self.transfer_request_repository = DatasetTransferRequestRepository()
 
@@ -1663,6 +1664,27 @@ class DataSetService(BaseService):
             current_app.logger.exception(f"Error deleting dataset {dataset_id}: {exc}")
             raise DatasetMetadataUpdateError(f"Could not delete dataset: {str(exc)}")
 
+    def get_dataset_stats(self, dataset_id: int) -> dict:
+        """Return total and monthly statistics (downloads and views) for a dataset.
+
+        Both download and view metrics represent unique counts (one per user or anonymous
+        cookie session per dataset) as recorded in DSDownloadRecord and DSViewRecord.
+        """
+        dataset = self.get_or_404(dataset_id)
+        total_downloads = self.dsdownloadrecord_repository.count_by_dataset(dataset.id)
+        total_views = self.dsviewrecord_repository.count_by_dataset(dataset.id)
+        monthly_downloads = self.dsdownloadrecord_repository.get_monthly_downloads_by_dataset(dataset.id)
+        monthly_views = self.dsviewrecord_repository.get_monthly_views_by_dataset(dataset.id)
+        return {
+            "dataset_id": dataset.id,
+            "total_downloads": total_downloads,
+            "total_views": total_views,
+            "downloads": total_downloads,
+            "views": total_views,
+            "downloads_per_month": monthly_downloads,
+            "views_per_month": monthly_views,
+        }
+
 
 class AuthorService(BaseService):
     def __init__(self):
@@ -1693,6 +1715,12 @@ class DSDownloadRecordService(BaseService):
             self.statistics_service.increment_datasets_downloaded()
 
         return user_cookie
+
+    def count_by_dataset(self, dataset_id: int) -> int:
+        return self.repository.count_by_dataset(dataset_id)
+
+    def get_monthly_downloads_by_dataset(self, dataset_id: int) -> dict:
+        return self.repository.get_monthly_downloads_by_dataset(dataset_id)
 
 
 class DSMetaDataService(BaseService):
@@ -1730,6 +1758,12 @@ class DSViewRecordService(BaseService):
             self.statistics_service.increment_datasets_viewed()
 
         return user_cookie
+
+    def count_by_dataset(self, dataset_id: int) -> int:
+        return self.repository.count_by_dataset(dataset_id)
+
+    def get_monthly_views_by_dataset(self, dataset_id: int) -> dict:
+        return self.repository.get_monthly_views_by_dataset(dataset_id)
 
 
 class DOIMappingService(BaseService):

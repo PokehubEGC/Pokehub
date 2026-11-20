@@ -5,7 +5,7 @@ from typing import List, Optional
 import pytz
 from flask_login import current_user
 from splent_framework.repositories.BaseRepository import BaseRepository
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 
 from app.features.dataset.models import (
     Author,
@@ -76,6 +76,27 @@ class DSDownloadRecordRepository(BaseRepository):
             download_cookie=user_cookie,
         )
 
+    def count_by_dataset(self, dataset_id: int) -> int:
+        """Count unique download records for a specific dataset."""
+        return self.model.query.filter_by(dataset_id=dataset_id).count()
+
+    def get_monthly_downloads_by_dataset(self, dataset_id: int) -> dict:
+        """Return download counts grouped by month (YYYY-MM) for a dataset."""
+        bind = self.session.get_bind()
+        if bind and bind.dialect.name == "sqlite":
+            date_expr = func.strftime("%Y-%m", self.model.download_date)
+        else:
+            date_expr = func.date_format(self.model.download_date, "%Y-%m")
+
+        results = (
+            self.session.query(date_expr.label("ym"), func.count(self.model.id))
+            .filter(self.model.dataset_id == dataset_id)
+            .group_by("ym")
+            .order_by("ym")
+            .all()
+        )
+        return {ym: count for ym, count in results if ym}
+
 
 class DSMetaDataRepository(BaseRepository):
     def __init__(self):
@@ -103,6 +124,27 @@ class DSViewRecordRepository(BaseRepository):
             view_date=datetime.now(pytz.utc),
             view_cookie=user_cookie,
         )
+
+    def count_by_dataset(self, dataset_id: int) -> int:
+        """Count unique view records for a specific dataset."""
+        return self.model.query.filter_by(dataset_id=dataset_id).count()
+
+    def get_monthly_views_by_dataset(self, dataset_id: int) -> dict:
+        """Return view counts grouped by month (YYYY-MM) for a dataset."""
+        bind = self.session.get_bind()
+        if bind and bind.dialect.name == "sqlite":
+            date_expr = func.strftime("%Y-%m", self.model.view_date)
+        else:
+            date_expr = func.date_format(self.model.view_date, "%Y-%m")
+
+        results = (
+            self.session.query(date_expr.label("ym"), func.count(self.model.id))
+            .filter(self.model.dataset_id == dataset_id)
+            .group_by("ym")
+            .order_by("ym")
+            .all()
+        )
+        return {ym: count for ym, count in results if ym}
 
 
 class DataSetRepository(BaseRepository):

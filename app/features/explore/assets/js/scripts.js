@@ -243,6 +243,8 @@ function renderResults(results, append = false) {
         if (result.type === 'dataset') {
             if (result.likes === undefined) result.likes = 0;
             if (result.dislikes === undefined) result.dislikes = 0;
+            if (result.download_count === undefined) result.download_count = 0;
+            if (result.view_count === undefined) result.view_count = 0;
             html = Mustache.render(datasetTemplate, result);
         } else if (result.type === 'hubfile') {
             html = Mustache.render(hubfileTemplate, result);
