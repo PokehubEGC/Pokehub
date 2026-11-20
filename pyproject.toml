@@ -194,7 +194,7 @@ features = [
     "webhook",
     "zenodo",
 ]
-features_dev = []
+features_dev = ["fakenodo"]
 features_prod = []
 
 # --------------------
