@@ -468,9 +468,10 @@ def test_dataset_download_and_view_count_methods():
     dataset = DataSet()
     dataset.id = 42
 
-    with patch("app.features.dataset.models.DSDownloadRecord.query") as mock_dl_query, patch(
-        "app.features.dataset.models.DSViewRecord.query"
-    ) as mock_view_query:
+    with (
+        patch("app.features.dataset.models.DSDownloadRecord.query") as mock_dl_query,
+        patch("app.features.dataset.models.DSViewRecord.query") as mock_view_query,
+    ):
         mock_dl_query.filter_by.return_value.count.return_value = 5
         mock_view_query.filter_by.return_value.count.return_value = 12
 
@@ -500,17 +501,15 @@ def test_dataset_to_dict_includes_download_and_view_counts():
     dataset.dataset_origin_id = None
     dataset.feature_models = []
 
-    with patch.object(dataset, "get_download_count", return_value=7), patch.object(
-        dataset, "get_view_count", return_value=15
-    ), patch.object(dataset, "get_uvlhub_doi", return_value="http://uvlhub.io/dataset/10"), patch.object(
-        dataset, "get_zenodo_url", return_value=None
-    ), patch.object(
-        dataset, "get_file_total_size", return_value=0
-    ), patch.object(
-        dataset, "get_file_total_size_for_human", return_value="0 bytes"
-    ), patch(
-        "app.features.dataset.models.request"
-    ) as mock_request:
+    with (
+        patch.object(dataset, "get_download_count", return_value=7),
+        patch.object(dataset, "get_view_count", return_value=15),
+        patch.object(dataset, "get_uvlhub_doi", return_value="http://uvlhub.io/dataset/10"),
+        patch.object(dataset, "get_zenodo_url", return_value=None),
+        patch.object(dataset, "get_file_total_size", return_value=0),
+        patch.object(dataset, "get_file_total_size_for_human", return_value="0 bytes"),
+        patch("app.features.dataset.models.request") as mock_request,
+    ):
         mock_request.host_url = "http://localhost/"
 
         d = dataset.to_dict()

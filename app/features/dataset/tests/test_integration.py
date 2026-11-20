@@ -1732,6 +1732,7 @@ def test_download_counter_increases_after_download_and_appears_in_api(test_clien
     - /api/v1/datasets/<id>/stats reports total and monthly statistics.
     """
     from flask import Response
+
     from app.features.auth.repositories import UserRepository
     from app.features.dataset.models import PublicationType
     from app.features.dataset.repositories import DataSetRepository, DSMetaDataRepository
@@ -1822,4 +1823,3 @@ def test_download_counter_increases_after_download_and_appears_in_api(test_clien
     assert stats["downloads"] == 2
     assert isinstance(stats["downloads_per_month"], dict)
     assert sum(stats["downloads_per_month"].values()) == 2
-
