@@ -1,5 +1,6 @@
-from app.features.fakenodo.models import Fakenodo
 from splent_framework.repositories.BaseRepository import BaseRepository
+
+from app.features.fakenodo.models import Fakenodo
 
 
 class FakenodoRepository(BaseRepository):

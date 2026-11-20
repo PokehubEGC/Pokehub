@@ -3,6 +3,7 @@
 Drive the application through the Flask test client. The ``test_client``
 fixture rebuilds a clean DB per test for full isolation.
 """
+
 import pytest
 
 pytestmark = pytest.mark.integration

@@ -1,10 +1,10 @@
-from selenium.common.exceptions import NoSuchElementException
 import time
 
-from app.environment.host import get_host_for_selenium_testing
-from app.selenium.common import initialize_driver, close_driver
-
 import pytest
+from selenium.common.exceptions import NoSuchElementException
+
+from app.environment.host import get_host_for_selenium_testing
+from app.selenium.common import close_driver, initialize_driver
 
 pytestmark = pytest.mark.e2e
 
@@ -17,7 +17,7 @@ def test_fakenodo_index():
         host = get_host_for_selenium_testing()
 
         # Open the index page
-        driver.get(f'{host}/fakenodo')
+        driver.get(f"{host}/fakenodo")
 
         # Wait a little while to make sure the page has loaded completely
         time.sleep(4)
@@ -27,7 +27,7 @@ def test_fakenodo_index():
             pass
 
         except NoSuchElementException:
-            raise AssertionError('Test failed!')
+            raise AssertionError("Test failed!")
 
     finally:
 
