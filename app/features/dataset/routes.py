@@ -2266,6 +2266,35 @@ def api_dataset_summary(dataset_id):
     )
 
 
+@dataset_bp.route("/api/v1/datasets/<int:dataset_id>/stats", methods=["GET"])
+@require_api_key("read_dataset")
+def api_dataset_stats(dataset_id):
+    """
+    Get dataset statistics (total & monthly downloads and views)
+    ---
+    tags:
+      - Datasets
+    security:
+      - ApiKeyAuth: []
+    parameters:
+      - name: dataset_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the dataset to retrieve statistics for
+    responses:
+      200:
+        description: Dataset statistics (unique downloads and views, total and per month)
+      404:
+        description: Dataset not found
+    """
+    dataset = dataset_service.get_by_id(dataset_id)
+    if not dataset:
+        return jsonify({"error": "Dataset not found"}), 404
+    stats = dataset_service.get_dataset_stats(dataset_id)
+    return jsonify(stats)
+
+
 @dataset_bp.route("/api/v1/datasets/<int:dataset_id>/files", methods=["GET"])
 @require_api_key("read_dataset")
 def api_list_files(dataset_id):

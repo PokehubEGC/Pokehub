@@ -87,6 +87,10 @@ def index_dataset(dataset):
         "likes": rating_counts["likes"],
         "dislikes": rating_counts["dislikes"],
         "net_likes": rating_counts["likes"] - rating_counts["dislikes"],
+        "download_count": dataset.get_download_count(),
+        "downloads": dataset.get_download_count(),
+        "view_count": dataset.get_view_count(),
+        "views": dataset.get_view_count(),
     }
 
     search.index_document(doc_id=f"dataset-{dataset.id}", data=doc)

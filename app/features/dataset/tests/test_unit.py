@@ -459,3 +459,83 @@ def test_transfer_migration_downgrade_drops_the_table_without_dropping_its_index
 
     op.drop_table.assert_called_once_with("dataset_transfer_request")
     assert op.drop_index.call_args_list == []
+
+
+# --- Popularity & download metrics ---------------------------------------
+
+
+def test_dataset_download_and_view_count_methods():
+    dataset = DataSet()
+    dataset.id = 42
+
+    with patch("app.features.dataset.models.DSDownloadRecord.query") as mock_dl_query, patch(
+        "app.features.dataset.models.DSViewRecord.query"
+    ) as mock_view_query:
+        mock_dl_query.filter_by.return_value.count.return_value = 5
+        mock_view_query.filter_by.return_value.count.return_value = 12
+
+        assert dataset.get_download_count() == 5
+        assert dataset.get_view_count() == 12
+
+        mock_dl_query.filter_by.assert_called_once_with(dataset_id=42)
+        mock_view_query.filter_by.assert_called_once_with(dataset_id=42)
+
+
+def test_dataset_to_dict_includes_download_and_view_counts():
+    dataset = DataSet()
+    dataset.id = 10
+    dataset.created_at = datetime(2026, 1, 1, tzinfo=pytz.utc)
+    dataset.ds_meta_data = MagicMock(
+        title="Test Dataset",
+        description="A test",
+        authors=[],
+        publication_type=None,
+        publication_doi=None,
+        dataset_doi=None,
+        dataset_concept_doi=None,
+        metadata_synced=True,
+        tags=None,
+    )
+    dataset.dataset_version = 1
+    dataset.dataset_origin_id = None
+    dataset.feature_models = []
+
+    with patch.object(dataset, "get_download_count", return_value=7), patch.object(
+        dataset, "get_view_count", return_value=15
+    ), patch.object(dataset, "get_uvlhub_doi", return_value="http://uvlhub.io/dataset/10"), patch.object(
+        dataset, "get_zenodo_url", return_value=None
+    ), patch.object(
+        dataset, "get_file_total_size", return_value=0
+    ), patch.object(
+        dataset, "get_file_total_size_for_human", return_value="0 bytes"
+    ), patch(
+        "app.features.dataset.models.request"
+    ) as mock_request:
+        mock_request.host_url = "http://localhost/"
+
+        d = dataset.to_dict()
+
+    assert d["download_count"] == 7
+    assert d["downloads"] == 7
+    assert d["view_count"] == 15
+    assert d["views"] == 15
+
+
+def test_get_dataset_stats_service():
+    service = DataSetService()
+    mock_ds = MagicMock(id=99)
+    service.get_or_404 = MagicMock(return_value=mock_ds)
+    service.dsdownloadrecord_repository.count_by_dataset = MagicMock(return_value=3)
+    service.dsviewrecord_repository.count_by_dataset = MagicMock(return_value=10)
+    service.dsdownloadrecord_repository.get_monthly_downloads_by_dataset = MagicMock(return_value={"2026-01": 3})
+    service.dsviewrecord_repository.get_monthly_views_by_dataset = MagicMock(return_value={"2026-01": 10})
+
+    stats = service.get_dataset_stats(99)
+
+    assert stats["dataset_id"] == 99
+    assert stats["total_downloads"] == 3
+    assert stats["total_views"] == 10
+    assert stats["downloads"] == 3
+    assert stats["views"] == 10
+    assert stats["downloads_per_month"] == {"2026-01": 3}
+    assert stats["views_per_month"] == {"2026-01": 10}

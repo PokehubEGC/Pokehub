@@ -183,4 +183,18 @@ from splent_framework.seeders.BaseSeeder import BaseSeeder
 
 class <Name>Seeder(BaseSeeder):
     priority = 10  # lower priority runs first; default 10
+
+
+## Dataset Popularity Metrics: Downloads and Views
+
+UVLHub tracks dataset popularity via view and download counters:
+
+- **Unique counts decision:** The counters measure **unique downloads** and **unique views** per user or anonymous cookie session (one record per user/anonymous cookie per dataset), tracked in `DSDownloadRecord` and `DSViewRecord`.
+- **Rationale:** Counting unique events rather than every raw HTTP request prevents artificial inflation of metrics from browser reloads, automated crawlers, network retries, or accidental repeated clicks by the same user.
+- **Surfacing:**
+  - **Dataset workbench page:** Displayed in the metadata facts section with view and download counts and tooltips.
+  - **Explore page (`/explore`):** Displayed in dataset search result cards next to community rating metrics.
+  - **REST API (`/api/v1/datasets` and `/api/v1/datasets/<id>`):** Exposed as `download_count` (alias `downloads`) and `view_count` (alias `views`).
+  - **Stats endpoint (`/api/v1/datasets/<id>/stats`):** Exposes total and per-month breakdowns (`downloads_per_month` and `views_per_month`).
+
 ```

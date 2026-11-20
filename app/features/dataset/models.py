@@ -272,6 +272,24 @@ class DataSet(db.Model):
             return None
         return self.ds_meta_data.publication_type.name.replace("_", " ").title()
 
+    def get_download_count(self) -> int:
+        """Total unique downloads recorded for this dataset.
+
+        Counted from DSDownloadRecord. The counter tracks unique downloads
+        (one per user or anonymous cookie session per dataset) to prevent
+        artificial inflation by repeated clicks.
+        """
+        return DSDownloadRecord.query.filter_by(dataset_id=self.id).count()
+
+    def get_view_count(self) -> int:
+        """Total unique views recorded for this dataset.
+
+        Counted from DSViewRecord. The counter tracks unique views
+        (one per user or anonymous cookie session per dataset) to reflect
+        unique audience reach.
+        """
+        return DSViewRecord.query.filter_by(dataset_id=self.id).count()
+
     def to_dict(self):
         return {
             "title": self.ds_meta_data.title,
@@ -295,6 +313,10 @@ class DataSet(db.Model):
             "files_count": self.get_files_count(),
             "total_size_in_bytes": self.get_file_total_size(),
             "total_size_in_human_format": self.get_file_total_size_for_human(),
+            "download_count": self.get_download_count(),
+            "downloads": self.get_download_count(),
+            "view_count": self.get_view_count(),
+            "views": self.get_view_count(),
         }
 
     def get_zenodo_deposition(self) -> int:

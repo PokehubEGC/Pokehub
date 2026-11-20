@@ -99,6 +99,10 @@ class ElasticsearchService:
                             "likes": {"type": "integer"},
                             "dislikes": {"type": "integer"},
                             "net_likes": {"type": "integer"},
+                            "download_count": {"type": "integer"},
+                            "downloads": {"type": "integer"},
+                            "view_count": {"type": "integer"},
+                            "views": {"type": "integer"},
                         }
                     },
                 },
