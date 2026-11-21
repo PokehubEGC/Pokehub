@@ -24,8 +24,6 @@ on:
       - 'docker/**'
       - 'pyproject.toml'
       - 'package.json'
-      - 'app/**'
-      - '.github/workflows/CD_devsecops.yml'
   release:
     types: [published]
   workflow_dispatch:
