@@ -89,6 +89,8 @@
                 </div>
 
                 {# Meta facts: single inline row #}
+                {% set views = dataset.get_view_count() %}
+                {% set downloads = dataset.get_download_count() %}
                 <div class="text-muted fs-7 mb-4 d-flex flex-wrap align-items-center gap-1">
                     <span>{{ dataset.created_at.strftime('%b %d, %Y') }}</span>
                     <span class="text-gray-400">·</span>
@@ -97,11 +99,11 @@
                     <span>{{ dataset.get_file_total_size_for_human() }}</span>
                     <span class="text-gray-400">·</span>
                     <span title="Total views (unique)" data-bs-toggle="tooltip">
-                        <i class="ki-duotone ki-eye fs-7 align-middle me-1"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>{{ dataset.get_view_count() }} view{{ '' if dataset.get_view_count() == 1 else 's' }}
+                        <i class="ki-duotone ki-eye fs-7 align-middle me-1"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>{{ views }} view{{ '' if views == 1 else 's' }}
                     </span>
                     <span class="text-gray-400">·</span>
                     <span title="Total downloads (unique)" data-bs-toggle="tooltip">
-                        <i class="ki-duotone ki-folder-down fs-7 align-middle me-1"><span class="path1"></span><span class="path2"></span></i>{{ dataset.get_download_count() }} download{{ '' if dataset.get_download_count() == 1 else 's' }}
+                        <i class="ki-duotone ki-folder-down fs-7 align-middle me-1"><span class="path1"></span><span class="path2"></span></i>{{ downloads }} download{{ '' if downloads == 1 else 's' }}
                     </span>
                 </div>
 

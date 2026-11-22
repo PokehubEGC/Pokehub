@@ -518,6 +518,42 @@ def test_dataset_to_dict_includes_download_and_view_counts():
     assert d["downloads"] == 7
     assert d["view_count"] == 15
     assert d["views"] == 15
+    dataset.get_download_count.assert_called_once()
+    dataset.get_view_count.assert_called_once()
+
+
+def test_update_dataset_metrics():
+    from app.features.elasticsearch.utils import update_dataset_metrics
+
+    # Case 1: dataset without DOI is skipped
+    ds_no_doi = MagicMock()
+    ds_no_doi.ds_meta_data.dataset_doi = None
+    update_dataset_metrics(ds_no_doi)
+
+    # Case 2: dataset with DOI updates Elasticsearch
+    ds = MagicMock(id=12)
+    ds.ds_meta_data.dataset_doi = "10.1234/test"
+    ds.get_download_count.return_value = 8
+    ds.get_view_count.return_value = 20
+
+    with patch("app.features.elasticsearch.services.ElasticsearchService") as mock_es_cls:
+        mock_es = MagicMock()
+        mock_es.index_name = "search_index"
+        mock_es_cls.return_value = mock_es
+
+        update_dataset_metrics(ds)
+
+        mock_es.es.update.assert_called_once_with(
+            index="search_index",
+            id="dataset-12",
+            doc={
+                "download_count": 8,
+                "downloads": 8,
+                "view_count": 20,
+                "views": 20,
+            },
+            refresh=True,
+        )
 
 
 def test_get_dataset_stats_service():

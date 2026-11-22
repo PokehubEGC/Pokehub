@@ -291,6 +291,8 @@ class DataSet(db.Model):
         return DSViewRecord.query.filter_by(dataset_id=self.id).count()
 
     def to_dict(self):
+        download_count = self.get_download_count()
+        view_count = self.get_view_count()
         return {
             "title": self.ds_meta_data.title,
             "id": self.id,
@@ -313,10 +315,10 @@ class DataSet(db.Model):
             "files_count": self.get_files_count(),
             "total_size_in_bytes": self.get_file_total_size(),
             "total_size_in_human_format": self.get_file_total_size_for_human(),
-            "download_count": self.get_download_count(),
-            "downloads": self.get_download_count(),
-            "view_count": self.get_view_count(),
-            "views": self.get_view_count(),
+            "download_count": download_count,
+            "downloads": download_count,
+            "view_count": view_count,
+            "views": view_count,
         }
 
     def get_zenodo_deposition(self) -> int:

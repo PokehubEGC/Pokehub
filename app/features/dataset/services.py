@@ -1713,6 +1713,12 @@ class DSDownloadRecordService(BaseService):
         if not existing_record:
             self.create_new_record(dataset=dataset, user_cookie=user_cookie)
             self.statistics_service.increment_datasets_downloaded()
+            try:
+                from app.features.elasticsearch.utils import update_dataset_metrics
+
+                update_dataset_metrics(dataset)
+            except Exception as exc:
+                current_app.logger.warning(f"Could not update ES metrics after download: {exc}")
 
         return user_cookie
 
@@ -1756,6 +1762,12 @@ class DSViewRecordService(BaseService):
         if not existing_record:
             self.create_new_record(dataset=dataset, user_cookie=user_cookie)
             self.statistics_service.increment_datasets_viewed()
+            try:
+                from app.features.elasticsearch.utils import update_dataset_metrics
+
+                update_dataset_metrics(dataset)
+            except Exception as exc:
+                current_app.logger.warning(f"Could not update ES metrics after view: {exc}")
 
         return user_cookie
 

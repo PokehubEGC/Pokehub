@@ -1761,15 +1761,13 @@ def test_download_counter_increases_after_download_and_appears_in_api(test_clien
     assert item["downloads"] == 0
 
     # 2. Perform a download
+    test_client.set_cookie("download_cookie", "client-cookie-1")
     with (
         patch("app.features.dataset.routes.os.path.exists", return_value=True),
         patch("app.features.dataset.routes.send_file", return_value=Response("dummy-zip", status=200)),
         patch.object(dataset_routes.dataset_service, "zip_from_storage", return_value="/tmp/test.zip"),
     ):
-        dl_res = test_client.get(
-            f"/datasets/download/{dataset.id}",
-            headers={"Cookie": "download_cookie=client-cookie-1"},
-        )
+        dl_res = test_client.get(f"/datasets/download/{dataset.id}")
         assert dl_res.status_code == 200
 
     # 3. Counter increased to 1 and appears in API
@@ -1789,25 +1787,20 @@ def test_download_counter_increases_after_download_and_appears_in_api(test_clien
         patch("app.features.dataset.routes.send_file", return_value=Response("dummy-zip", status=200)),
         patch.object(dataset_routes.dataset_service, "zip_from_storage", return_value="/tmp/test.zip"),
     ):
-        dl_res_repeat = test_client.get(
-            f"/datasets/download/{dataset.id}",
-            headers={"Cookie": "download_cookie=client-cookie-1"},
-        )
+        dl_res_repeat = test_client.get(f"/datasets/download/{dataset.id}")
         assert dl_res_repeat.status_code == 200
 
     detail_repeat = test_client.get(f"/api/v1/datasets/{dataset.id}", headers={"X-API-Key": token})
     assert detail_repeat.get_json()["download_count"] == 1
 
     # 5. New client downloading increments counter to 2
+    test_client.set_cookie("download_cookie", "client-cookie-2")
     with (
         patch("app.features.dataset.routes.os.path.exists", return_value=True),
         patch("app.features.dataset.routes.send_file", return_value=Response("dummy-zip", status=200)),
         patch.object(dataset_routes.dataset_service, "zip_from_storage", return_value="/tmp/test.zip"),
     ):
-        dl_res_new = test_client.get(
-            f"/datasets/download/{dataset.id}",
-            headers={"Cookie": "download_cookie=client-cookie-2"},
-        )
+        dl_res_new = test_client.get(f"/datasets/download/{dataset.id}")
         assert dl_res_new.status_code == 200
 
     detail_two = test_client.get(f"/api/v1/datasets/{dataset.id}", headers={"X-API-Key": token})
