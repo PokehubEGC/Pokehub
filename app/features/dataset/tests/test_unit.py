@@ -502,8 +502,8 @@ def test_dataset_to_dict_includes_download_and_view_counts():
     dataset.feature_models = []
 
     with (
-        patch.object(dataset, "get_download_count", return_value=7),
-        patch.object(dataset, "get_view_count", return_value=15),
+        patch.object(dataset, "get_download_count", return_value=7) as mock_get_download_count,
+        patch.object(dataset, "get_view_count", return_value=15) as mock_get_view_count,
         patch.object(dataset, "get_uvlhub_doi", return_value="http://uvlhub.io/dataset/10"),
         patch.object(dataset, "get_zenodo_url", return_value=None),
         patch.object(dataset, "get_file_total_size", return_value=0),
@@ -516,8 +516,8 @@ def test_dataset_to_dict_includes_download_and_view_counts():
     assert d["view_count"] == 15
     assert d["views"] == 15
     assert d["download"] == "/dataset/download/10"
-    dataset.get_download_count.assert_called_once()
-    dataset.get_view_count.assert_called_once()
+    mock_get_download_count.assert_called_once()
+    mock_get_view_count.assert_called_once()
 
 
 def test_update_dataset_metrics():
