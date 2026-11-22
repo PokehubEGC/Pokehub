@@ -2,7 +2,7 @@ name: Deploy and Smoke Tests
 
 on:
   workflow_run:
-    workflows: ["Pytest"]
+    workflows: ["Pytest (Slow)"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
