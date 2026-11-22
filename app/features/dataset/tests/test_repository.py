@@ -1,8 +1,16 @@
+from datetime import datetime, timedelta
+
 import pytest
 
 from app.features.auth.repositories import UserRepository
 from app.features.dataset.models import PublicationType
-from app.features.dataset.repositories import DataSetRepository, DSMetaDataRepository
+from app.features.dataset.repositories import (
+    AuthorRepository,
+    DataSetRepository,
+    DSDownloadRecordRepository,
+    DSMetaDataRepository,
+    DSViewRecordRepository,
+)
 
 pytestmark = pytest.mark.repository
 
@@ -23,6 +31,39 @@ def test_count_synchronized_only_counts_datasets_with_a_doi(test_app, clean_data
 
     assert repo.count_synchronized_datasets() == 1
     assert repo.count_unsynchronized_datasets() == 1
+
+
+@pytest.mark.parametrize(
+    ("metric", "record_repo", "prefix"),
+    [("downloads", DSDownloadRecordRepository, "download"), ("views", DSViewRecordRepository, "view")],
+)
+@pytest.mark.parametrize("days", [7, 30])
+def test_trending_ranks_published_datasets_with_activity_in_period(
+    test_app, clean_database, metric, record_repo, prefix, days
+):
+    end = datetime(2026, 11, 21, 12)
+    start = end - timedelta(days=days)
+    repo = record_repo()
+
+    def dataset_with_events(label, dates, published=True):
+        dataset = _dataset(f"10.1/{label}" if published else None, f"{label}@example.com")
+        for index, date in enumerate(dates):
+            repo.create(dataset_id=dataset.id, **{f"{prefix}_date": date, f"{prefix}_cookie": str(index)})
+        return dataset
+
+    popular = dataset_with_events("popular", [start, end, end + timedelta(seconds=1)])
+    for name in ("First", "Second"):
+        AuthorRepository().create(name=name, ds_meta_data_id=popular.ds_meta_data_id)
+    tied = [dataset_with_events(f"tied-{index}", [start + timedelta(seconds=1)]) for index in range(5)]
+    dataset_with_events("old", [start - timedelta(seconds=1)] * 3)
+    dataset_with_events("draft", [start] * 3, published=False)
+    dataset_with_events("inactive", [])
+
+    ranking = DataSetRepository().get_trending_datasets(metric, start, end)
+    assert [(dataset.id, count) for dataset, count in ranking] == [
+        (popular.id, 2),
+        *((dataset.id, 1) for dataset in tied[:4]),
+    ]
 
 
 def test_dataset_version_lineage(test_app, clean_database):

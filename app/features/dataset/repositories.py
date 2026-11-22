@@ -5,7 +5,8 @@ from typing import List, Optional
 import pytz
 from flask_login import current_user
 from splent_framework.repositories.BaseRepository import BaseRepository
-from sqlalchemy import desc
+from sqlalchemy import desc, func
+from sqlalchemy.orm import joinedload
 
 from app.features.dataset.models import (
     Author,
@@ -226,6 +227,28 @@ class DataSetRepository(BaseRepository):
             .order_by(self.model.feature_model_count.desc())
             .order_by(desc(self.model.created_at))
             .limit(5)
+            .all()
+        )
+
+    def get_trending_datasets(self, metric: str, start: datetime, end: datetime, limit: int = 5):
+        record, date = {
+            "downloads": (DSDownloadRecord, DSDownloadRecord.download_date),
+            "views": (DSViewRecord, DSViewRecord.view_date),
+        }[metric]
+        activity = (
+            self.session.query(record.dataset_id, func.count(record.id).label("event_count"))
+            .filter(date >= start, date <= end)
+            .group_by(record.dataset_id)
+            .subquery()
+        )
+        return (
+            self.session.query(DataSet, activity.c.event_count)
+            .join(activity, activity.c.dataset_id == DataSet.id)
+            .join(DataSet.ds_meta_data)
+            .filter(DSMetaData.dataset_doi.isnot(None))
+            .options(joinedload(DataSet.ds_meta_data).selectinload(DSMetaData.authors))
+            .order_by(activity.c.event_count.desc(), DataSet.id.asc())
+            .limit(limit)
             .all()
         )
 
