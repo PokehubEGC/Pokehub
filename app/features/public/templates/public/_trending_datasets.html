@@ -1,0 +1,50 @@
+<section class="card mb-5" id="trending-datasets" aria-labelledby="trending-datasets-title">
+    <div class="card-body">
+        <h2 id="trending-datasets-title">Trending datasets</h2>
+        <form class="row g-3 align-items-end mb-4" method="get"
+              action="{{ url_for('public.index') }}">
+            <div class="col-12 col-sm-auto">
+                <label class="form-label" for="trending-metric">Rank by</label>
+                <select class="form-select" id="trending-metric" name="trending_metric">
+                    <option value="downloads"{% if trending_metric == 'downloads' %} selected{% endif %}>Downloads</option>
+                    <option value="views"{% if trending_metric == 'views' %} selected{% endif %}>Views</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-auto">
+                <label class="form-label" for="trending-period">Period</label>
+                <select class="form-select" id="trending-period" name="trending_period">
+                    <option value="week"{% if trending_period == 'week' %} selected{% endif %}>Last 7 days</option>
+                    <option value="month"{% if trending_period == 'month' %} selected{% endif %}>Last 30 days</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-auto">
+                <button class="btn btn-primary" type="submit">Apply</button>
+            </div>
+        </form>
+        {% if trending_datasets %}
+            <ol class="list-group list-group-numbered">
+                {% for dataset, event_count in trending_datasets %}
+                    {% set metadata = dataset.ds_meta_data %}
+                    <li class="list-group-item text-break">
+                        <a class="fw-semibold" href="{{ dataset.get_uvlhub_doi() }}">{{ metadata.title }}</a>
+                        <div class="text-muted">
+                            {% if metadata.dataset_anonymous %}
+                                Anonymous
+                            {% elif metadata.authors %}
+                                {{ metadata.authors | sort(attribute='name') | map(attribute='name') | join(', ') }}
+                            {% else %}
+                                No authors listed
+                            {% endif %}
+                            <span class="d-block">
+                                {{ event_count | format_thousands }}
+                                {{ trending_metric[:-1] if event_count == 1 else trending_metric }}
+                            </span>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            <p class="text-muted mb-0">No {{ trending_metric }} recorded for published datasets in this period.</p>
+        {% endif %}
+    </div>
+</section>
