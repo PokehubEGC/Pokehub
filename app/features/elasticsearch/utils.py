@@ -130,9 +130,7 @@ def update_dataset_metrics(dataset):
         try:
             index_dataset(dataset)
         except Exception as exc:
-            logger.warning(
-                "Could not sync Elasticsearch metrics for dataset %s: %s", getattr(dataset, "id", None), exc
-            )
+            logger.warning("Could not sync Elasticsearch metrics for dataset %s: %s", getattr(dataset, "id", None), exc)
 
 
 def index_hubfile(hubfile):
