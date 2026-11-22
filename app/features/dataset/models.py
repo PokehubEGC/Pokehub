@@ -3,7 +3,7 @@ from enum import Enum
 from typing import List
 
 import pytz
-from flask import request
+from flask import has_request_context, request
 from flask_login import current_user
 from sqlalchemy import Boolean
 from sqlalchemy import Enum as SQLAlchemyEnum
@@ -293,6 +293,11 @@ class DataSet(db.Model):
     def to_dict(self):
         download_count = self.get_download_count()
         view_count = self.get_view_count()
+        download_url = (
+            f'{request.host_url.rstrip("/")}/dataset/download/{self.id}'
+            if has_request_context()
+            else f"/dataset/download/{self.id}"
+        )
         return {
             "title": self.ds_meta_data.title,
             "id": self.id,
@@ -309,7 +314,7 @@ class DataSet(db.Model):
             "metadata_synced": self.ds_meta_data.metadata_synced,
             "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
             "url": self.get_uvlhub_doi(),
-            "download": f'{request.host_url.rstrip("/")}/dataset/download/{self.id}',
+            "download": download_url,
             "zenodo": self.get_zenodo_url(),
             "files": [file.to_dict() for fm in self.feature_models for file in fm.hubfiles],
             "files_count": self.get_files_count(),
