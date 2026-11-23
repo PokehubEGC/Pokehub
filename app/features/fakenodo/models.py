@@ -6,4 +6,4 @@ class Deposition(db.Model):
     doi = db.Column(db.String(50), nullable=False, unique=True)
 
     def __repr__(self):
-        return f"Fakenodo<{self.id}>"
+        return f"Deposition<{self.id}>"
