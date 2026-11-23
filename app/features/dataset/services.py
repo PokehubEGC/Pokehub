@@ -8,7 +8,7 @@ import tempfile
 import unicodedata
 import uuid
 import zipfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 from urllib import error as urllib_error
 from urllib import request as urllib_request
@@ -248,6 +248,16 @@ class DataSetService(BaseService):
 
     def get_top_5_datasets_by_feature_model_count(self) -> List[DataSet]:
         return self.repository.get_top_5_datasets_by_feature_model_count()
+
+    def get_trending_datasets(self, metric: str = "downloads", period: str = "week"):
+        if metric not in ("downloads", "views"):
+            metric = "downloads"
+        if period not in ("week", "month"):
+            period = "week"
+        # Record dates are stored as UTC without timezone information.
+        end = datetime.now(pytz.utc).replace(tzinfo=None)
+        start = end - timedelta(days=7 if period == "week" else 30)
+        return metric, period, self.repository.get_trending_datasets(metric, start, end)
 
     def count_feature_models(self, dataset_id: int) -> int:
         dataset = self.repository.get_by_id(dataset_id)
