@@ -17,13 +17,6 @@ on:
       - 'package.json'
       - 'app/**'
       - '.github/workflows/CD_devsecops.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'docker/**'
-      - 'pyproject.toml'
-      - 'package.json'
   release:
     types: [published]
   workflow_dispatch:
