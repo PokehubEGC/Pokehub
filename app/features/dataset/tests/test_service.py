@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,6 +14,27 @@ from app.features.dataset.services import (
 from app.features.zenodo.services import ZenodoUnavailableError
 
 pytestmark = pytest.mark.service
+
+
+@pytest.mark.parametrize(
+    ("params", "metric", "period", "days"),
+    [
+        ({}, "downloads", "week", 7),
+        ({"metric": "views", "period": "month"}, "views", "month", 30),
+        ({"metric": "invalid", "period": "invalid"}, "downloads", "week", 7),
+    ],
+)
+def test_trending_service_uses_utc_window_and_normalizes_filters(test_app, params, metric, period, days):
+    end = datetime(2026, 11, 21, 12)
+    service = DataSetService()
+    with (
+        patch("app.features.dataset.services.datetime") as clock,
+        patch.object(service.repository, "get_trending_datasets", return_value=[]) as query,
+    ):
+        clock.now.return_value = end.replace(tzinfo=timezone.utc)
+        assert service.get_trending_datasets(**params) == (metric, period, [])
+        assert clock.now.call_args.args[0].utcoffset(end) == timedelta(0)
+    query.assert_called_once_with(metric, end - timedelta(days=days), end)
 
 
 def _mock_dataset_for_edit():

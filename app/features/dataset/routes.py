@@ -2121,13 +2121,19 @@ def api_list_datasets():
         description: Page number
         required: false
         default: 1
+      - name: per_page
+        in: query
+        type: integer
+        description: Number of items per page
+        required: false
+        default: 5
     responses:
       200:
         description: Paginated list of datasets
     """
 
     page = request.args.get("page", 1, type=int)
-    per_page = 5
+    per_page = request.args.get("per_page", 5, type=int)
 
     pagination = dataset_service.paginate(page=page, per_page=per_page)
     items = [ds.to_dict() for ds in pagination.items]

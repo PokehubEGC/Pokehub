@@ -51,6 +51,9 @@ def index_dataset(dataset):
 
     rating_counts = DatasetRatingRepository().counts_for(dataset.version_root().id)
 
+    download_count = dataset.get_download_count()
+    view_count = dataset.get_view_count()
+
     doc = {
         "type": "dataset",
         "id": dataset.id,
@@ -87,15 +90,47 @@ def index_dataset(dataset):
         "likes": rating_counts["likes"],
         "dislikes": rating_counts["dislikes"],
         "net_likes": rating_counts["likes"] - rating_counts["dislikes"],
-        "download_count": dataset.get_download_count(),
-        "downloads": dataset.get_download_count(),
-        "view_count": dataset.get_view_count(),
-        "views": dataset.get_view_count(),
+        "download_count": download_count,
+        "downloads": download_count,
+        "view_count": view_count,
+        "views": view_count,
     }
 
     search.index_document(doc_id=f"dataset-{dataset.id}", data=doc)
 
     logger.info(f"[SEARCH] Dataset {dataset.id} indexed with DOI: {dataset.ds_meta_data.dataset_doi}")
+
+
+def update_dataset_metrics(dataset):
+    """Synchronize download and view counters to Elasticsearch for a dataset."""
+    if not dataset or not getattr(dataset, "ds_meta_data", None) or not dataset.ds_meta_data.dataset_doi:
+        return
+
+    from app.features.elasticsearch.services import ElasticsearchService
+
+    search = ElasticsearchService()
+    doc_id = f"dataset-{dataset.id}"
+    dl = dataset.get_download_count()
+    vw = dataset.get_view_count()
+    try:
+        search.es.update(
+            index=search.index_name,
+            id=doc_id,
+            doc={
+                "download_count": dl,
+                "downloads": dl,
+                "view_count": vw,
+                "views": vw,
+            },
+            refresh=True,
+        )
+        logger.info("[SEARCH] Updated metrics for dataset %s (downloads=%s, views=%s)", dataset.id, dl, vw)
+    except Exception:
+        # Fall back to full indexing if the document is not yet in ES or update failed
+        try:
+            index_dataset(dataset)
+        except Exception as exc:
+            logger.warning("Could not sync Elasticsearch metrics for dataset %s: %s", getattr(dataset, "id", None), exc)
 
 
 def index_hubfile(hubfile):

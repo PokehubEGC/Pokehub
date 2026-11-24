@@ -89,4 +89,31 @@ def api_search():
         size=size,
     )
 
+    # Enrich dataset results with unique download and view counts
+    dataset_ids = [r["id"] for r in results if isinstance(r, dict) and r.get("type") == "dataset" and "id" in r]
+    if dataset_ids:
+        from sqlalchemy import func
+
+        from app import db
+        from app.features.dataset.models import DSDownloadRecord, DSViewRecord
+
+        downloads_by_id = dict(
+            db.session.query(DSDownloadRecord.dataset_id, func.count(DSDownloadRecord.id))
+            .filter(DSDownloadRecord.dataset_id.in_(dataset_ids))
+            .group_by(DSDownloadRecord.dataset_id)
+            .all()
+        )
+        views_by_id = dict(
+            db.session.query(DSViewRecord.dataset_id, func.count(DSViewRecord.id))
+            .filter(DSViewRecord.dataset_id.in_(dataset_ids))
+            .group_by(DSViewRecord.dataset_id)
+            .all()
+        )
+        for r in results:
+            if isinstance(r, dict) and r.get("type") == "dataset" and "id" in r:
+                r["download_count"] = downloads_by_id.get(r["id"], 0)
+                r["downloads"] = r["download_count"]
+                r["view_count"] = views_by_id.get(r["id"], 0)
+                r["views"] = r["view_count"]
+
     return jsonify({"results": results, "total": total, "page": page, "size": size})

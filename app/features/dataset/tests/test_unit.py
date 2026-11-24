@@ -502,22 +502,56 @@ def test_dataset_to_dict_includes_download_and_view_counts():
     dataset.feature_models = []
 
     with (
-        patch.object(dataset, "get_download_count", return_value=7),
-        patch.object(dataset, "get_view_count", return_value=15),
+        patch.object(dataset, "get_download_count", return_value=7) as mock_get_download_count,
+        patch.object(dataset, "get_view_count", return_value=15) as mock_get_view_count,
         patch.object(dataset, "get_uvlhub_doi", return_value="http://uvlhub.io/dataset/10"),
         patch.object(dataset, "get_zenodo_url", return_value=None),
         patch.object(dataset, "get_file_total_size", return_value=0),
         patch.object(dataset, "get_file_total_size_for_human", return_value="0 bytes"),
-        patch("app.features.dataset.models.request") as mock_request,
     ):
-        mock_request.host_url = "http://localhost/"
-
         d = dataset.to_dict()
 
     assert d["download_count"] == 7
     assert d["downloads"] == 7
     assert d["view_count"] == 15
     assert d["views"] == 15
+    assert d["download"] == "/dataset/download/10"
+    mock_get_download_count.assert_called_once()
+    mock_get_view_count.assert_called_once()
+
+
+def test_update_dataset_metrics():
+    from app.features.elasticsearch.utils import update_dataset_metrics
+
+    # Case 1: dataset without DOI is skipped
+    ds_no_doi = MagicMock()
+    ds_no_doi.ds_meta_data.dataset_doi = None
+    update_dataset_metrics(ds_no_doi)
+
+    # Case 2: dataset with DOI updates Elasticsearch
+    ds = MagicMock(id=12)
+    ds.ds_meta_data.dataset_doi = "10.1234/test"
+    ds.get_download_count.return_value = 8
+    ds.get_view_count.return_value = 20
+
+    with patch("app.features.elasticsearch.services.ElasticsearchService") as mock_es_cls:
+        mock_es = MagicMock()
+        mock_es.index_name = "search_index"
+        mock_es_cls.return_value = mock_es
+
+        update_dataset_metrics(ds)
+
+        mock_es.es.update.assert_called_once_with(
+            index="search_index",
+            id="dataset-12",
+            doc={
+                "download_count": 8,
+                "downloads": 8,
+                "view_count": 20,
+                "views": 20,
+            },
+            refresh=True,
+        )
 
 
 def test_get_dataset_stats_service():
