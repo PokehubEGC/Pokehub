@@ -2,9 +2,7 @@ name: Pytest
 
 on:
   push:
-    branches: [main, trunk]
-  pull_request:
-    branches: [trunk]
+    branches: [main]
 
 jobs:
   pytest:
@@ -62,5 +60,5 @@ jobs:
         # install it editable into the CI Python env.
         run: pip install --no-cache-dir -e ./app/features/generator/vendor
 
-      - name: Run tests (fast pyramid — unit + repository + service + integration)
-        run: pytest app/features -m "(unit or repository or service or integration) and not slow"
+      - name: Run all tests
+        run: pytest app/features
