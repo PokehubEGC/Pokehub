@@ -1,4 +1,4 @@
-from flask import jsonify, render_template, request
+from flask import jsonify, request
 
 from app.features.fakenodo import fakenodo_bp
 from app.features.fakenodo.services import FakenodoService
