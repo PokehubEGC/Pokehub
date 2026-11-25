@@ -6,13 +6,23 @@ from app.features.fakenodo.services import FakenodoService
 fakenodo_service = FakenodoService()
 
 
+def _serialize_deposition(deposition):
+    return {
+        "id": deposition.id,
+        "doi": deposition.doi,
+        "conceptdoi": deposition.conceptdoi,
+        "status": deposition.status,
+    }
+
+
 def _jsonify_deposition(deposition):
-    return jsonify({"id": deposition.id, "doi": deposition.doi})
+    return jsonify(_serialize_deposition(deposition))
 
 
 @fakenodo_bp.route("/fakenodo", methods=["GET"])
-def index():
-    return render_template("fakenodo/index.html")
+def list_depositions():
+    depositions = fakenodo_service.get_all()
+    return jsonify([_serialize_deposition(d) for d in depositions]), 200
 
 
 @fakenodo_bp.route("/fakenodo/<int:deposition_id>", methods=["GET"])
@@ -33,3 +43,15 @@ def create_deposition():
         return jsonify({"error": f"Error creating deposition: {str(exc)}"}), 400
     deposition = fakenodo_service.create(doi="fakenodo-DOI-1")
     return _jsonify_deposition(deposition), 201
+
+
+@fakenodo_bp.route("/fakenodo/<int:deposition_id>/actions/publish", methods=["POST"])
+def publish_deposition(deposition_id):
+    deposition = fakenodo_service.publish(deposition_id)
+    return _jsonify_deposition(deposition), 202
+
+
+@fakenodo_bp.route("/fakenodo/<int:deposition_id>", methods=["DELETE"])
+def delete_deposition(deposition_id):
+    fakenodo_service.delete(deposition_id)
+    return "", 204
