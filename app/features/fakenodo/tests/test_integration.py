@@ -192,3 +192,52 @@ def test_fakenodo_publish_after_file_change_generates_new_doi_same_conceptdoi(te
     body = response.get_json()
     assert body["doi"] != "10.5281/fakenodo.1.abc123"
     assert body["conceptdoi"] == "10.5281/fakenodo.concept.1"
+
+
+# --- POST /<id>/files: upload a file ---
+
+
+def test_fakenodo_upload_file_success(test_client):
+    deposition = Deposition(
+        id=1,
+        doi="10.5281/fakenodo.1.abc123",
+        conceptdoi="10.5281/fakenodo.concept.1",
+        status="draft",
+        files_changed=False,
+    )
+
+    def fake_update(dep_id, **kwargs):
+        for key, value in kwargs.items():
+            setattr(deposition, key, value)
+        return deposition
+
+    file_data = {"name": "test.txt", "file": "This is a test file."}
+
+    with (
+        patch.object(fakenodo_routes.fakenodo_service.repository, "get_or_404", return_value=deposition),
+        patch.object(fakenodo_routes.fakenodo_service.repository, "update", side_effect=fake_update),
+    ):
+        response = test_client.post("/fakenodo/1/files", json=file_data)
+
+    assert response.status_code == 201
+    assert response.data == b""
+    assert deposition.files_changed
+
+
+def test_fakenodo_upload_file_without_data_returns_400(test_client):
+    assert test_client.post("/fakenodo/1/files").status_code == 400
+
+
+def test_fakenodo_upload_file_without_file_returns_400(test_client):
+    file_data = {"name": "test.txt"}
+    assert test_client.post("/fakenodo/1/files", json=file_data).status_code == 400
+
+
+def test_fakenodo_upload_file_without_file_name_returns_400(test_client):
+    file_data = {"file": "This is a test file."}
+    assert test_client.post("/fakenodo/1/files", json=file_data).status_code == 400
+
+
+def test_fakenodo_upload_file_deposition_not_found_returns_404(test_client):
+    file_data = {"name": "test.txt", "file": "This is a test file."}
+    assert test_client.post("/fakenodo/999999/files", json=file_data).status_code == 404

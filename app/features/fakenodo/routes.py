@@ -55,3 +55,31 @@ def publish_deposition(deposition_id):
 def delete_deposition(deposition_id):
     fakenodo_service.delete(deposition_id)
     return "", 204
+
+
+@fakenodo_bp.route("/fakenodo/<int:deposition_id>/files", methods=["POST"])
+def upload_file(deposition_id):
+    """
+    A request to upload a file to a deposition must include file name and file content.
+
+    Two ways of encoding this information have been implemented:
+
+    1. FOR ZENODO: Name in attribute 'data' of request: {"name": "test_file.txt"},
+    file in attribute 'files' of request: {"file": open(file_path, "rb")}
+
+    2. FOR TESTING: Attribute 'json' of request: {"name": "test.txt", "file":
+    "This is a test file."}. This version was implemented because test
+    requests don't allow the attribute 'files'.
+    """
+    try:
+        request.get_json()["name"]
+        request.files["file"]
+    except Exception:
+        try:
+            file_data = request.get_json()
+            file_data["name"]
+            file_data["file"]
+        except Exception:
+            return jsonify({"error": "Error uploading file: No file or filename."}), 400
+    fakenodo_service.upload_file(deposition_id)
+    return "", 201

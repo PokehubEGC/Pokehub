@@ -34,3 +34,7 @@ class FakenodoService(BaseService):
             status="published",
             files_changed=False,
         )
+
+    def upload_file(self, deposition_id: int):
+        self.get_or_404(deposition_id)
+        self.repository.update(deposition_id, files_changed=True)
