@@ -83,3 +83,9 @@ def upload_file(deposition_id):
             return jsonify({"error": "Error uploading file: No file or filename."}), 400
     fakenodo_service.upload_file(deposition_id)
     return "", 201
+
+
+@fakenodo_bp.route("/fakenodo/<int:deposition_id>/actions/newversion", methods=["POST"])
+def new_version_deposition(deposition_id: int):
+    new_deposition = fakenodo_service.new_version(deposition_id)
+    return jsonify(_serialize_deposition(new_deposition)), 201

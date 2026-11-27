@@ -38,3 +38,8 @@ class FakenodoService(BaseService):
     def upload_file(self, deposition_id: int):
         self.get_or_404(deposition_id)
         self.repository.update(deposition_id, files_changed=True)
+
+    def new_version(self, deposition_id: int):
+        original = self.get_or_404(deposition_id)
+        conceptdoi = original.conceptdoi or f"10.5281/fakenodo.concept.{original.id}"
+        return self.repository.create(doi=None, conceptdoi=conceptdoi, status="draft", files_changed=True)

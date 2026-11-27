@@ -241,3 +241,75 @@ def test_fakenodo_upload_file_without_file_name_returns_400(test_client):
 def test_fakenodo_upload_file_deposition_not_found_returns_404(test_client):
     file_data = {"name": "test.txt", "file": "This is a test file."}
     assert test_client.post("/fakenodo/999999/files", json=file_data).status_code == 404
+
+
+# --- POST /<id>/actions/newversion: create a new version sharing conceptdoi ---
+
+
+def test_fakenodo_newversion_not_found_returns_404(test_client):
+    assert test_client.post("/fakenodo/999999/actions/newversion").status_code == 404
+
+
+def test_fakenodo_newversion_creates_draft_with_same_conceptdoi(test_client):
+    original = Deposition(
+        id=1,
+        doi="10.5281/fakenodo.1.abc123",
+        conceptdoi="10.5281/fakenodo.concept.1",
+        status="published",
+        files_changed=False,
+    )
+    created_draft = Deposition(
+        id=2,
+        doi=None,
+        conceptdoi="10.5281/fakenodo.concept.1",
+        status="draft",
+        files_changed=True,
+    )
+
+    with (
+        patch.object(fakenodo_routes.fakenodo_service.repository, "get_or_404", return_value=original),
+        patch.object(fakenodo_routes.fakenodo_service.repository, "create", return_value=created_draft) as mock_create,
+    ):
+        response = test_client.post("/fakenodo/1/actions/newversion")
+
+    assert response.status_code == 201
+    body = response.get_json()
+    assert body["id"] == 2
+    assert body["doi"] is None
+    assert body["conceptdoi"] == "10.5281/fakenodo.concept.1"
+    assert body["status"] == "draft"
+    mock_create.assert_called_once_with(
+        doi=None,
+        conceptdoi="10.5281/fakenodo.concept.1",
+        status="draft",
+        files_changed=True,
+    )
+
+
+def test_fakenodo_newversion_and_publish_generates_new_doi_same_conceptdoi(test_client):
+    new_draft = Deposition(
+        id=2,
+        doi=None,
+        conceptdoi="10.5281/fakenodo.concept.1",
+        status="draft",
+        files_changed=True,
+    )
+
+    def fake_update(dep_id, **kwargs):
+        for key, value in kwargs.items():
+            setattr(new_draft, key, value)
+        return new_draft
+
+    with (
+        patch.object(fakenodo_routes.fakenodo_service.repository, "get_or_404", return_value=new_draft),
+        patch.object(fakenodo_routes.fakenodo_service.repository, "update", side_effect=fake_update),
+    ):
+        response = test_client.post("/fakenodo/2/actions/publish")
+
+    assert response.status_code == 202
+    body = response.get_json()
+    assert body["id"] == 2
+    assert body["doi"] is not None
+    assert body["doi"] != "10.5281/fakenodo.1.abc123"
+    assert body["conceptdoi"] == "10.5281/fakenodo.concept.1"
+    assert body["status"] == "published"
