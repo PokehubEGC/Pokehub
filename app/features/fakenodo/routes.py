@@ -1,5 +1,7 @@
-from flask import jsonify, request
 import uuid
+
+from flask import jsonify, request
+
 from app.features.fakenodo import fakenodo_bp
 from app.features.fakenodo.services import FakenodoService
 
@@ -12,7 +14,7 @@ def _serialize_deposition(deposition):
         "doi": deposition.doi,
         "conceptdoi": deposition.conceptdoi,
         "status": deposition.status,
-        "links": {"latest_draft": f"{request.host_url.rstrip('/')}/fakenodo/{deposition.id}"}
+        "links": {"latest_draft": f"{request.host_url.rstrip('/')}/fakenodo/{deposition.id}"},
     }
 
 
