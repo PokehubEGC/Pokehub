@@ -78,6 +78,12 @@ class Hubfile(db.Model):
             self.name,
         )
 
+    def is_readable_by(self, user) -> bool:
+        dataset = self.dataset
+        if dataset.ds_meta_data and dataset.ds_meta_data.dataset_doi:
+            return True
+        return user.is_authenticated and user.id == dataset.user_id
+
     def public_raw_url(self) -> str:
         """Build the public, percent-encoded raw URL for this file (https outside
         local). Generic: any consumer (e.g. UVL-domain tool URLs) can build on it.
@@ -107,6 +113,13 @@ class Hubfile(db.Model):
 
     def __repr__(self):
         return f"<Hubfile id={self.id}, name={self.name}>"
+
+
+class ModelCartItem(db.Model):
+    __tablename__ = "model_cart_item"
+
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), primary_key=True)
+    file_id = db.Column(db.Integer, db.ForeignKey("hubfiles.id", ondelete="CASCADE"), primary_key=True)
 
 
 class HubfileViewRecord(db.Model):
