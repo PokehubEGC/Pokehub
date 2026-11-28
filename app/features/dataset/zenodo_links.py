@@ -16,4 +16,4 @@ def zenodo_record_url(deposition_id) -> str | None:
     api_url = _api_url()
     if api_url.endswith(_API_SUFFIX):
         return f"{api_url[: -len(_API_SUFFIX)]}/record/{deposition_id}"
-    return f"{api_url}/{deposition_id}"  
+    return f"{api_url}/{deposition_id}"
