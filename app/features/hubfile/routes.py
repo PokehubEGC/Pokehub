@@ -1,11 +1,13 @@
 import os
 import uuid as uuid_module
 from io import BytesIO
+from tempfile import TemporaryFile
 
 import requests
 from flask import (
     abort,
     current_app,
+    flash,
     jsonify,
     make_response,
     redirect,
@@ -19,6 +21,7 @@ from flask_login import current_user, login_required
 from app.features.dataset.decorators import is_dataset_owner
 from app.features.dataset.services import DataSetService, DOIMappingService, DSMetaDataService
 from app.features.hubfile import hubfile_bp
+from app.features.hubfile.cart import ModelCart
 from app.features.hubfile.services import (
     HubfileDownloadRecordService,
     HubfileService,
@@ -32,6 +35,64 @@ doi_mapping_service = DOIMappingService()
 dsmetadata_service = DSMetaDataService()
 hubfile_service = HubfileService()
 dataset_service = DataSetService()
+model_cart = ModelCart()
+
+
+@hubfile_bp.get("/model-cart")
+def view_cart():
+    return render_template("hubfile/model_cart.html", files=model_cart.files(), title="Model cart"), {
+        "Cache-Control": "no-store"
+    }
+
+
+@hubfile_bp.get("/model-cart/items")
+def cart_items():
+    return jsonify(ids=[file.id for file in model_cart.files()]), {"Cache-Control": "no-store"}
+
+
+@hubfile_bp.post("/model-cart/items/<int:file_id>")
+def update_cart_item(file_id):
+    data = request.get_json()
+    if not isinstance(data, dict) or not isinstance(data.get("in_cart"), bool):
+        abort(400)
+
+    in_cart = data["in_cart"]
+    if in_cart:
+        hubfile = hubfile_service.get_or_404(file_id)
+        if not hubfile.is_readable_by(current_user):
+            abort(404)
+
+    model_cart.set_membership(file_id, in_cart)
+    return cart_items()
+
+
+@hubfile_bp.get("/model-cart/download")
+def download_cart():
+    files = model_cart.files()
+    if not files:
+        return redirect(url_for("hubfile.view_cart"))
+
+    archive = TemporaryFile(mode="w+b")
+    try:
+        entries = ((file.get_full_path(), f"dataset_{file.dataset_id}/{file.relative_path}") for file in files)
+        dataset_service.build_download_archive(archive, entries)
+        size = archive.tell()
+        archive.seek(0)
+        response = send_file(archive, mimetype="application/zip", as_attachment=True, download_name="models.zip")
+        response.content_length = size
+
+        if request.method == "GET":
+            cookie = hubfile_download_record_service.record_downloads(files)
+            response.set_cookie("file_download_cookie", cookie)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    except FileNotFoundError:
+        archive.close()
+        flash("A model file is missing. Remove it from the cart to download the remaining models.", "warning")
+        return redirect(url_for("hubfile.view_cart"))
+    except Exception:
+        archive.close()
+        raise
 
 
 @hubfile_bp.route("/hubfile/upload", methods=["POST"])
@@ -419,11 +480,8 @@ def raw_uvl(file_id, filename):
 
 def _abort_unless_readable(hubfile):
     """Files of a dataset with a DOI are public; otherwise only the owner may read them."""
-    dataset = hubfile.dataset
-    is_public = bool(dataset.ds_meta_data and dataset.ds_meta_data.dataset_doi)
-    if not is_public:
-        if not current_user.is_authenticated or dataset.user_id != current_user.id:
-            abort(403)
+    if not hubfile.is_readable_by(current_user):
+        abort(403)
 
 
 @hubfile_bp.route("/hubfiles/<int:file_id>/workbench-content", methods=["GET"])
