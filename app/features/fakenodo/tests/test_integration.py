@@ -220,7 +220,7 @@ def test_fakenodo_upload_file_success(test_client):
         response = test_client.post("/fakenodo/1/files", json=file_data)
 
     assert response.status_code == 201
-    assert response.data == b""
+    assert response.get_json()["filename"] == "test.txt"
     assert deposition.files_changed
 
 

@@ -229,7 +229,8 @@ class DataSet(db.Model):
         return PUBLICATION_TYPE_LABELS.get(self.ds_meta_data.publication_type, None)
 
     def get_zenodo_url(self) -> str:
-        return f"https://zenodo.org/record/{self.ds_meta_data.deposition_id}" if self.ds_meta_data.dataset_doi else None
+        from app.features.dataset.zenodo_links import zenodo_record_url
+        return zenodo_record_url(self.ds_meta_data.deposition_id) if self.ds_meta_data.dataset_doi else None
 
     def count_feature_models(self) -> int:
         from app.features.dataset.services import DataSetService

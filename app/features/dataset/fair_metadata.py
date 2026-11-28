@@ -10,6 +10,7 @@ Emitted representations:
 from __future__ import annotations
 
 from urllib.parse import quote
+from app.features.dataset.zenodo_links import zenodo_record_url
 
 CC_BY_40 = "https://creativecommons.org/licenses/by/4.0/"
 CC_BY_40_NAME = "Creative Commons Attribution 4.0 International"
@@ -35,7 +36,7 @@ def _doi_url(doi):
 
 
 def _zenodo_url(deposition_id):
-    return f"https://zenodo.org/record/{deposition_id}" if deposition_id else None
+    return zenodo_record_url(deposition_id)
 
 
 def _keywords(dataset):

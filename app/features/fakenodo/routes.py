@@ -1,5 +1,5 @@
 from flask import jsonify, request
-
+import uuid
 from app.features.fakenodo import fakenodo_bp
 from app.features.fakenodo.services import FakenodoService
 
@@ -12,6 +12,7 @@ def _serialize_deposition(deposition):
         "doi": deposition.doi,
         "conceptdoi": deposition.conceptdoi,
         "status": deposition.status,
+        "links": {"latest_draft": f"{request.host_url.rstrip('/')}/fakenodo/{deposition.id}"}
     }
 
 
@@ -60,29 +61,22 @@ def delete_deposition(deposition_id):
 @fakenodo_bp.route("/fakenodo/<int:deposition_id>/files", methods=["POST"])
 def upload_file(deposition_id):
     """
-    A request to upload a file to a deposition must include file name and file content.
+    Two ways of sending the file are accepted:
 
-    Two ways of encoding this information have been implemented:
-
-    1. FOR ZENODO: Name in attribute 'data' of request: {"name": "test_file.txt"},
-    file in attribute 'files' of request: {"file": open(file_path, "rb")}
-
-    2. FOR TESTING: Attribute 'json' of request: {"name": "test.txt", "file":
-    "This is a test file."}. This version was implemented because test
-    requests don't allow the attribute 'files'.
+    1. FOR ZENODO (what ZenodoService sends): multipart form. Name in
+       request.form["name"], file in request.files["file"].
+    2. FOR TESTING: JSON body {"name": "test.txt", "file": "content"}.
     """
-    try:
-        request.get_json()["name"]
-        request.files["file"]
-    except Exception:
-        try:
-            file_data = request.get_json()
-            file_data["name"]
-            file_data["file"]
-        except Exception:
-            return jsonify({"error": "Error uploading file: No file or filename."}), 400
+    json_body = request.get_json(silent=True)
+    if request.files.get("file") and request.form.get("name"):
+        name = request.form["name"]
+    elif isinstance(json_body, dict) and json_body.get("name") and json_body.get("file"):
+        name = json_body["name"]
+    else:
+        return jsonify({"error": "Error uploading file: No file or filename."}), 400
+
     fakenodo_service.upload_file(deposition_id)
-    return "", 201
+    return jsonify({"id": uuid.uuid4().hex, "filename": name}), 201
 
 
 @fakenodo_bp.route("/fakenodo/<int:deposition_id>/actions/newversion", methods=["POST"])
