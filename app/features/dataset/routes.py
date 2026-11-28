@@ -9,7 +9,6 @@ from io import BytesIO
 from urllib import error as urllib_error
 from urllib import parse as urllib_parse
 from urllib import request as urllib_request
-from app.features.dataset.zenodo_links import zenodo_record_url
 
 import qrcode
 from flask import (
@@ -50,6 +49,7 @@ from app.features.dataset.services import (
     DSViewRecordService,
     LocalDatasetService,
 )
+from app.features.dataset.zenodo_links import zenodo_record_url
 from app.features.elasticsearch.services import IndexingService
 from app.features.elasticsearch.utils import index_dataset, index_hubfile
 from app.features.featuremodel.services import FeatureModelService
@@ -766,7 +766,7 @@ def subdomain_index(doi):
         "landing_url": f"{host_url.rstrip('/')}/doi/{meta.dataset_doi or ''}/",
         "doi_url": (f"https://doi.org/{meta.dataset_doi}" if meta.dataset_doi else None),
         "license_url": fair_metadata.CC_BY_40,
-        "zenodo_url": zenodo_record_url(meta.deposition_id)
+        "zenodo_url": zenodo_record_url(meta.deposition_id),
     }
 
     resp = make_response(

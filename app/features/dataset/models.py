@@ -230,6 +230,7 @@ class DataSet(db.Model):
 
     def get_zenodo_url(self) -> str:
         from app.features.dataset.zenodo_links import zenodo_record_url
+
         return zenodo_record_url(self.ds_meta_data.deposition_id) if self.ds_meta_data.dataset_doi else None
 
     def count_feature_models(self) -> int:

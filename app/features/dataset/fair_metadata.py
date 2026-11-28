@@ -10,6 +10,7 @@ Emitted representations:
 from __future__ import annotations
 
 from urllib.parse import quote
+
 from app.features.dataset.zenodo_links import zenodo_record_url
 
 CC_BY_40 = "https://creativecommons.org/licenses/by/4.0/"
