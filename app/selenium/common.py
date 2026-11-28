@@ -14,6 +14,8 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
 
+from app.environment.host import get_host_for_selenium_testing
+
 
 def get_service_driver():
     return os.environ.get("SERVICE_DRIVER", "firefox")
@@ -23,21 +25,24 @@ def set_service_driver(driver="firefox"):
     os.environ["SERVICE_DRIVER"] = driver
 
 
-def initialize_driver():
+def initialize_driver(*, enable_downloads=False):
     # Initialise the browser using WebDriver Manager
     working_dir = os.environ.get("WORKING_DIR", None)
     selenium_hub_url = "http://selenium-hub:4444/wd/hub"
     if working_dir == "/workspace/":
         if get_service_driver() == "chrome":
             options = webdriver.ChromeOptions()
-            driver = webdriver.Remote(command_executor=selenium_hub_url, options=options)  # Hub URL
+            if enable_downloads:
+                # Chrome blocks ZIP downloads over the test container's HTTP origin.
+                origin = get_host_for_selenium_testing()
+                options.add_argument(f"--unsafely-treat-insecure-origin-as-secure={origin}")
         elif get_service_driver() == "firefox":
-            # Configure Firefox to run through Selenium Grid.
             options = webdriver.FirefoxOptions()
-            driver = webdriver.Remote(command_executor=selenium_hub_url, options=options)  # Selenium Hub URL
-
         else:
             raise Exception("Driver not supported")
+        if enable_downloads:
+            options.enable_downloads = True
+        driver = webdriver.Remote(command_executor=selenium_hub_url, options=options)
     elif working_dir == "":
         if get_service_driver() == "chrome":
             options = webdriver.ChromeOptions()
