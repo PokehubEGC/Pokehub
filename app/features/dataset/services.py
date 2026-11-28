@@ -7,7 +7,6 @@ import shutil
 import tempfile
 import unicodedata
 import uuid
-import zipfile
 from datetime import datetime, timedelta
 from typing import List, Optional
 from urllib import error as urllib_error
@@ -1570,17 +1569,23 @@ class DataSetService(BaseService):
                                                 arcname=os.path.join(dataset_dir, fmt, relative_path),
                                             )
 
+    @staticmethod
+    def build_download_archive(destination, entries):
+        """Write (source path, archive path) pairs and return the number of files."""
+        with ZipFile(destination, "w") as archive:
+            count = 0
+            for source, archive_path in entries:
+                archive.write(source, arcname=archive_path)
+                count += 1
+        return count
+
     def zip_from_storage(self, dataset, formats: Optional[List[str]] = None):
         dataset_base_path = os.path.join(
             os.getenv("WORKING_DIR", ""), "uploads", f"user_{dataset.user_id}", f"dataset_{dataset.id}"
         )
         selected_formats = self.resolve_download_formats(formats)
 
-        temp_dir = tempfile.mkdtemp()
-        zip_path = os.path.join(temp_dir, f"dataset_{dataset.id}.zip")
-        written_files = 0
-
-        with zipfile.ZipFile(zip_path, "w") as zipf:
+        def entries():
             for fmt in selected_formats:
                 format_path = os.path.join(dataset_base_path, fmt)
                 if not os.path.isdir(format_path):
@@ -1590,11 +1595,14 @@ class DataSetService(BaseService):
                     for filename in files:
                         file_path = os.path.join(subdir, filename)
                         arcname = os.path.join(fmt, os.path.relpath(file_path, format_path))
-                        zipf.write(file_path, arcname=arcname)
-                        written_files += 1
+                        yield file_path, arcname
 
+        temp_dir = tempfile.mkdtemp()
+        zip_path = os.path.join(temp_dir, f"dataset_{dataset.id}.zip")
+        written_files = self.build_download_archive(zip_path, entries())
         if written_files == 0:
             current_app.logger.warning(f"[ZIP] No files found for selected formats in dataset {dataset.id}")
+            shutil.rmtree(temp_dir)
             return None
 
         return zip_path

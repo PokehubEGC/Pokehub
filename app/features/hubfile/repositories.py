@@ -61,8 +61,9 @@ class HubfileDownloadRecordRepository(BaseRepository):
             download_cookie=user_cookie,
         ).first()
 
-    def create_new_record(self, hubfile: Hubfile, user_cookie: str) -> HubfileViewRecord:
+    def create_new_record(self, hubfile: Hubfile, user_cookie: str, *, commit=True) -> HubfileDownloadRecord:
         return self.create(
+            commit=commit,
             user_id=current_user.id if current_user.is_authenticated else None,
             file_id=hubfile.id,
             download_date=datetime.now(pytz.utc),

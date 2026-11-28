@@ -122,21 +122,19 @@ class HubfileDownloadRecordService(BaseService):
     def the_record_exists(self, hubfile: Hubfile, user_cookie: str):
         return self.repository.the_record_exists(hubfile, user_cookie)
 
-    def create_new_record(self, hubfile: Hubfile, user_cookie: str) -> Hubfile:
-        return self.repository.create_new_record(hubfile, user_cookie)
+    def create_cookie(self, hubfile: Hubfile) -> str:
+        return self.record_downloads([hubfile])
 
-    def create_cookie(self, hubfile: Hubfile):
+    def record_downloads(self, hubfiles: list[Hubfile]) -> str:
+        user_cookie = request.cookies.get("file_download_cookie") or str(uuid.uuid4())
+        new_count = 0
+        for hubfile in hubfiles:
+            if not self.the_record_exists(hubfile, user_cookie):
+                self.repository.create_new_record(hubfile, user_cookie, commit=False)
+                new_count += 1
 
-        user_cookie = request.cookies.get("file_download_cookie")
-        if not user_cookie:
-            user_cookie = str(uuid.uuid4())
-
-        existing_record = self.the_record_exists(hubfile=hubfile, user_cookie=user_cookie)
-
-        if not existing_record:
-            self.create_new_record(hubfile=hubfile, user_cookie=user_cookie)
-            self.statistics_service.increment_feature_models_downloaded()
-
+        if new_count:
+            self.statistics_service.increment_feature_models_downloaded(new_count)
         return user_cookie
 
 

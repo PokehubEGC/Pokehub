@@ -154,8 +154,8 @@ class StatisticsService(BaseService):
     def increment_datasets_downloaded(self) -> int:
         return self.repository.increment_datasets_downloaded()
 
-    def increment_feature_models_downloaded(self) -> int:
-        return self.repository.increment_feature_models_downloaded()
+    def increment_feature_models_downloaded(self, amount: int = 1) -> int:
+        return self.repository.increment_feature_models_downloaded(amount)
 
     # Consultation methods
     def get_datasets_viewed(self) -> int:

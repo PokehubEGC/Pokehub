@@ -9,7 +9,7 @@ class StatisticsRepository(BaseRepository):
     def __init__(self):
         super().__init__(Statistics)
 
-    def get_statistics(self) -> Statistics:
+    def get_statistics(self, *, commit: bool = True) -> Statistics:
         statistics = self.model.query.first()
         if statistics is None:
             # If no registry exists, create a new registry with default values
@@ -22,7 +22,8 @@ class StatisticsRepository(BaseRepository):
                 feature_models_downloaded=0,
             )
             self.session.add(statistics)
-            self.session.commit()
+            if commit:
+                self.session.commit()
         return statistics
 
     # Incremental methods
@@ -35,13 +36,12 @@ class StatisticsRepository(BaseRepository):
     def increment_datasets_downloaded(self) -> int:
         return self._increment_field("datasets_downloaded")
 
-    def increment_feature_models_downloaded(self) -> int:
-        return self._increment_field("feature_models_downloaded")
+    def increment_feature_models_downloaded(self, amount: int = 1) -> int:
+        return self._increment_field("feature_models_downloaded", amount)
 
-    def _increment_field(self, field_name: str) -> int:
-        statistics = self.get_statistics()
-        current_value = getattr(statistics, field_name)
-        new_value = current_value + 1
+    def _increment_field(self, field_name: str, amount: int = 1) -> int:
+        statistics = self.get_statistics(commit=False)
+        new_value = (getattr(statistics, field_name) or 0) + amount
         setattr(statistics, field_name, new_value)
         self.session.commit()
         return new_value
