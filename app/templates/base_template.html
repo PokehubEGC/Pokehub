@@ -149,6 +149,14 @@
 							<!--end::Menu wrapper-->
 							<!--begin::Navbar-->
 							<div class="app-navbar flex-shrink-0">
+								<div class="app-navbar-item me-2">
+									<a id="model-cart-link" href="{{ url_for('hubfile.view_cart') }}"
+									   data-items-url="{{ url_for('hubfile.cart_items') }}"
+									   data-update-url="{{ url_for('hubfile.update_cart_item', file_id=0) }}"
+									   class="btn btn-sm btn-light text-nowrap">
+										Model cart <span id="model-cart-count" class="badge bg-primary" aria-live="polite"></span>
+									</a>
+								</div>
 
 								<!--begin::Theme mode-->
 								
@@ -893,6 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		<script src="{{ url_for('static', filename='plugins/custom/prismjs/prismjs.bundle.js') }}"></script>
 		<script src="{{ url_for('static', filename='plugins/custom/draggable/draggable.bundle.js') }}"></script>
 
+		<script defer src="{{ url_for('static', filename='js/model-cart.js') }}"></script>
 		{% block scripts %}{% endblock %}
 
 		<script src="https://unpkg.com/feather-icons"></script>

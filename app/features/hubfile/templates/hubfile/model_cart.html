@@ -1,0 +1,26 @@
+{% extends "base_template.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h1>Model cart</h1>
+        <p id="model-cart-empty" {% if files %}hidden{% endif %}>Your cart is empty.</p>
+        <ul id="model-cart-files" class="list-group list-group-flush mb-4">
+            {% for file in files %}
+                <li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2"
+                    data-model-cart-row>
+                    <div>
+                        <div class="fw-semibold text-break">{{ file.relative_path }}</div>
+                        <div class="text-muted">{{ file.dataset.ds_meta_data.title }}</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-light" data-model-cart-id="{{ file.id }}"
+                            disabled>Remove from cart</button>
+                </li>
+            {% endfor %}
+        </ul>
+        <div id="model-cart-download" {% if not files %}hidden{% endif %}>
+            <a class="btn btn-primary" href="{{ url_for('hubfile.download_cart') }}">Download models</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

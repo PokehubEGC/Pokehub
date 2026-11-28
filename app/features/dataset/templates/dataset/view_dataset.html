@@ -309,6 +309,10 @@
             <span class="text-muted small ms-1" id="workbench-counter">
                 {% if selected_file %}— / {{ hubfiles|length }}{% else %}— / {{ hubfiles|length }}{% endif %}
             </span>
+            {% if selected_file %}
+                <button type="button" class="btn btn-sm btn-light" id="workbench-cart-button"
+                        data-model-cart-id="{{ selected_file.id }}" disabled>Add to cart</button>
+            {% endif %}
 
         </div>
     </div>
@@ -1353,6 +1357,7 @@ function selectModel(fileId) {
 function applyFileUi(model) {
     if (!model) return;
     document.getElementById('model-picker-current').textContent = model.name;
+    document.getElementById('workbench-cart-button').dataset.modelCartId = model.id;
     const idx = WORKBENCH.models.findIndex(m => m.id === model.id);
     document.getElementById('workbench-counter').textContent = `${idx + 1} / ${WORKBENCH.models.length}`;
     const sizeEl = document.getElementById('workbench-uvl-size');
